@@ -1,0 +1,85 @@
+﻿@{
+    ViewData["Title"] = "Connexion";
+    // Ajout d'une classe spécifique pour le corps de la page de connexion
+    Layout = "_Layout";
+}
+<!-- Style personnalisé pour centrer et styliser la page de connexion -->
+<style>
+    /* Assurez un espacement vertical suffisant */
+    .login-container {
+        padding-top: 5rem;
+        padding-bottom: 5rem;
+        min-height: 100vh; /* S'assure que le conteneur couvre toute la hauteur de la fenêtre */
+        background-color: #f8f9fa; /* Couleur de fond légère */
+    }
+
+    .login-card {
+        max-width: 420px; /* Limite la largeur du formulaire */
+        margin: auto; /* Centre le formulaire horizontalement */
+    }
+</style>
+<div class="login-container">
+    <div class="card shadow-lg login-card border-0 rounded-4">
+        <div class="card-body p-5">
+            <div class="text-center mb-4">
+                <i class="bi bi-person-circle text-primary display-4 mb-2"></i>
+                <h1 class="h3 fw-bold mb-1">Bienvenue sur SmartSupply</h1>
+                <p class="text-muted">Connectez-vous à votre espace.</p>
+            </div>
+            <form asp-action="Login" method="post">
+                @Html.AntiForgeryToken()
+                <!-- Affichage général des messages d'erreur (manuel, sans ModelState) -->
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="alert alert-danger mb-3">
+                        @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+                    </div>
+                }
+                <!-- Champ Email -->
+                <div class="form-floating mb-3">
+                    <input name="Email" class="form-control @(ViewData.ModelState.ContainsKey("Email") && ViewData.ModelState["Email"].Errors.Any() ? "is-invalid" : "")" placeholder="Adresse email" value="@ViewData["Email"]" />
+                    <label for="Email">Adresse email</label>
+                    @if (ViewData.ModelState.ContainsKey("Email") && ViewData.ModelState["Email"].Errors.Any())
+                    {
+                        <div class="invalid-feedback">
+                            @ViewData.ModelState["Email"].Errors.FirstOrDefault()?.ErrorMessage
+                        </div>
+                    }
+                </div>
+                <!-- Champ Mot de passe -->
+                <div class="form-floating mb-4">
+                    <input name="Password" type="password" class="form-control @(ViewData.ModelState.ContainsKey("Password") && ViewData.ModelState["Password"].Errors.Any() ? "is-invalid" : "")" placeholder="Mot de passe" />
+                    <label for="Password">Mot de passe</label>
+                    @if (ViewData.ModelState.ContainsKey("Password") && ViewData.ModelState["Password"].Errors.Any())
+                    {
+                        <div class="invalid-feedback">
+                            @ViewData.ModelState["Password"].Errors.FirstOrDefault()?.ErrorMessage
+                        </div>
+                    }
+                </div>
+                <!-- Case Se souvenir -->
+                <div class="form-check mb-4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <input name="RememberMe" class="form-check-input" type="checkbox" id="rememberMeCheck" @(ViewData["RememberMe"]?.ToString() == "true" ? "checked" : "") />
+                        <label class="form-check-label" for="rememberMeCheck">Se souvenir de moi</label>
+                    </div>
+                    <!-- Optionnel: Lien mot de passe oublié -->
+                    <a href="#" class="text-decoration-none small">Mot de passe oublié?</a>
+                </div>
+                <!-- Bouton de connexion -->
+                <button type="submit" class="w-100 btn btn-lg btn-primary mb-3">
+                    Se connecter <i class="bi bi-box-arrow-in-right ms-2"></i>
+                </button>
+                <!-- Bouton Créer un compte -->
+                <p class="text-center mt-3">
+                    <a asp-controller="Account" asp-action="SignUp" class="btn btn-sm btn-outline-secondary w-100">
+                        Créer un nouveau compte
+                    </a>
+                </p>
+            </form>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

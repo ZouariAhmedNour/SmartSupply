@@ -1,0 +1,96 @@
+﻿@{
+    ViewData["Title"] = "Inscription";
+    Layout = "_Layout";
+}
+<h2>Créer un compte</h2>
+<form asp-action="SignUp" method="post">
+    @Html.AntiForgeryToken()
+    <!-- Affichage général des messages d'erreur -->
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger mb-3">
+            @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+        </div>
+    }
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group mb-2">
+                <label for="Nom">Nom</label>
+                <input name="Nom" class="form-control @(ViewData.ModelState.ContainsKey("Nom") && ViewData.ModelState["Nom"].Errors.Any() ? "is-invalid" : "")" value="@ViewData["Nom"]" />
+                @if (ViewData.ModelState.ContainsKey("Nom") && ViewData.ModelState["Nom"].Errors.Any())
+                {
+                    <div class="invalid-feedback">
+                        @ViewData.ModelState["Nom"].Errors.FirstOrDefault()?.ErrorMessage
+                    </div>
+                }
+            </div>
+            <div class="form-group mb-2">
+                <label for="Prenom">Prénom</label>
+                <input name="Prenom" class="form-control @(ViewData.ModelState.ContainsKey("Prenom") && ViewData.ModelState["Prenom"].Errors.Any() ? "is-invalid" : "")" value="@ViewData["Prenom"]" />
+                @if (ViewData.ModelState.ContainsKey("Prenom") && ViewData.ModelState["Prenom"].Errors.Any())
+                {
+                    <div class="invalid-feedback">
+                        @ViewData.ModelState["Prenom"].Errors.FirstOrDefault()?.ErrorMessage
+                    </div>
+                }
+            </div>
+            <div class="form-group mb-2">
+                <label for="Email">Email</label>
+                <input name="Email" class="form-control @(ViewData.ModelState.ContainsKey("Email") && ViewData.ModelState["Email"].Errors.Any() ? "is-invalid" : "")" value="@ViewData["Email"]" />
+                @if (ViewData.ModelState.ContainsKey("Email") && ViewData.ModelState["Email"].Errors.Any())
+                {
+                    <div class="invalid-feedback">
+                        @ViewData.ModelState["Email"].Errors.FirstOrDefault()?.ErrorMessage
+                    </div>
+                }
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group mb-2">
+                <label for="Password">Mot de passe</label>
+                <input name="Password" type="password" class="form-control @(ViewData.ModelState.ContainsKey("Password") && ViewData.ModelState["Password"].Errors.Any() ? "is-invalid" : "")" />
+                @if (ViewData.ModelState.ContainsKey("Password") && ViewData.ModelState["Password"].Errors.Any())
+                {
+                    <div class="invalid-feedback">
+                        @ViewData.ModelState["Password"].Errors.FirstOrDefault()?.ErrorMessage
+                    </div>
+                }
+            </div>
+            <div class="form-group mb-2">
+                <label for="ConfirmPassword">Confirmer le mot de passe</label>
+                <input name="ConfirmPassword" type="password" class="form-control @(ViewData.ModelState.ContainsKey("ConfirmPassword") && ViewData.ModelState["ConfirmPassword"].Errors.Any() ? "is-invalid" : "")" />
+                @if (ViewData.ModelState.ContainsKey("ConfirmPassword") && ViewData.ModelState["ConfirmPassword"].Errors.Any())
+                {
+                    <div class="invalid-feedback">
+                        @ViewData.ModelState["ConfirmPassword"].Errors.FirstOrDefault()?.ErrorMessage
+                    </div>
+                }
+            </div>
+            <div class="form-group mb-3">
+                <label for="Role">Rôle</label>
+                <select name="Role" class="form-select">
+                    @{
+                        var availableRoles = (List<string>)ViewBag.AvailableRoles ?? new List<string> { "Magasinier", "ResponsableLogistique", "Responsable", "Administrateur" };
+                        var selectedRole = ViewData["Role"]?.ToString() ?? "Magasinier";
+                    }
+                    @foreach (var r in availableRoles)
+                    {
+                        <option value="@r" selected="@(r == selectedRole ? "selected" : null)">@r</option>
+                    }
+                </select>
+                @if (ViewData.ModelState.ContainsKey("Role") && ViewData.ModelState["Role"].Errors.Any())
+                {
+                    <div class="invalid-feedback d-block">
+                        @ViewData.ModelState["Role"].Errors.FirstOrDefault()?.ErrorMessage
+                    </div>
+                }
+                <small class="text-muted">Par défaut : Magasinier. Note : l'attribution automatique d'un rôle Administrateur à l'inscription publique est dangereuse.</small>
+            </div>
+        </div>
+    </div>
+    <button type="submit" class="btn btn-primary">S'inscrire</button>
+    <a asp-controller="Account" asp-action="Login" class="btn btn-link">Déjà un compte ? Se connecter</a>
+</form>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

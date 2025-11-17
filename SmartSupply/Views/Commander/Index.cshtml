@@ -1,0 +1,102 @@
+﻿@{
+    ViewData["Title"] = "Espace Commandes";
+    Layout = "_Layout";
+}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0">Tableau de bord — Commandes</h2>
+            <p class="text-muted mb-0">Espace Responsable Logistique / Responsable Commandes</p>
+        </div>
+        <div>
+            <a asp-controller="Commander" asp-action="Index" class="btn btn-outline-primary me-2">
+                <i class="bi bi-house-door"></i> Accueil
+            </a>
+            <a asp-controller="Commandes" asp-action="Index" class="btn btn-primary">
+                Voir toutes les commandes
+            </a>
+        </div>
+    </div>
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Total</h6>
+                    <h3 class="card-title">@ViewBag.TotalCommandes</h3>
+                    <p class="card-text text-muted">Commandes créées</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm h-100 border-success">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Livrées</h6>
+                    <h3 class="card-title">@ViewBag.Livrees</h3>
+                    <p class="card-text text-success">Commandes livrées</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm h-100 border-warning">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">En attente</h6>
+                    <h3 class="card-title">@ViewBag.EnAttente</h3>
+                    <p class="card-text text-warning">En attente de traitement</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm h-100 border-danger">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Annulées</h6>
+                    <h3 class="card-title">@ViewBag.Annulees</h3>
+                    <p class="card-text text-danger">Commandes annulées</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <h5 class="mb-3">Dernières commandes</h5>
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Client</th>
+                    <th>Montant</th>
+                    <th>Statut</th>
+                    <th>Date</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (ViewBag.DernieresCommandes != null && ((System.Collections.IEnumerable)ViewBag.DernieresCommandes).Cast<object>().Any())
+                {
+                    @foreach (dynamic c in ViewBag.DernieresCommandes)
+                    {
+                        <tr>
+                            <td>@c.Id</td>
+                            <td>@c.ClientNom</td>
+                            <td>@c.MontantTotal.ToString("C")</td>
+                            <td>@c.Statut</td>
+                            <td>@c.DateCreation.ToString("yyyy-MM-dd HH:mm")</td>
+                            <td>
+                                <a asp-controller="Commandes" asp-action="Details" asp-route-id="@c.Id" class="btn btn-sm btn-outline-primary">Voir</a>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="6" class="text-center text-muted">Aucune commande récente.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+<style>
+    .card-title {
+        font-weight: 700;
+    }
+</style>

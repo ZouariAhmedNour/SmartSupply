@@ -1,0 +1,99 @@
+﻿@{
+    ViewData["Title"] = "Espace Administrateur";
+}
+
+<div class="container py-5">
+    <!-- En-tête du Dashboard -->
+    <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold text-primary">Tableau de Bord SmartSupply</h1>
+        <p class="lead text-muted">Gérez et supervisez les opérations clés de votre système logistique.</p>
+    </div>
+
+    <!-- Section des actions rapides (Cards) -->
+    <div class="row g-4">
+
+        <!-- Carte 1: Gérer les Produits -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card shadow-sm h-100 border-0 rounded-3 card-hover-scale">
+                <div class="card-body">
+                    <h5 class="card-title text-success fw-bold">
+                        <i class="bi bi-box-seam me-2"></i> Produits
+                        <span class="badge bg-success-subtle text-success float-end">CRUD</span>
+                    </h5>
+                    <p class="card-text text-muted">Ajouter, modifier ou supprimer les articles disponibles à la vente.</p>
+                    <a asp-controller="Produits" asp-action="Index" class="btn btn-sm btn-outline-success mt-2">
+                        Accéder aux Produits <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Carte 2: Gérer les Entrepôts -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card shadow-sm h-100 border-0 rounded-3 card-hover-scale">
+                <div class="card-body">
+                    <h5 class="card-title text-info fw-bold">
+                        <i class="bi bi-warehouse me-2"></i> Entrepôts
+                        <span class="badge bg-info-subtle text-info float-end">Structure</span>
+                    </h5>
+                    <p class="card-text text-muted">Définir les lieux de stockage et leurs capacités logistiques.</p>
+                    <a asp-controller="Entrepots" asp-action="Index" class="btn btn-sm btn-outline-info mt-2">
+                        Gérer les Sites <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Carte 3: Gérer les Utilisateurs -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card shadow-sm h-100 border-0 rounded-3 card-hover-scale">
+                <div class="card-body">
+                    <h5 class="card-title text-warning fw-bold">
+                        <i class="bi bi-people-fill me-2"></i> Utilisateurs
+                        <span class="badge bg-warning-subtle text-warning float-end">Sécurité</span>
+                    </h5>
+                    <p class="card-text text-muted">Gérer les accès, les rôles et les permissions (Administrateurs/Opérateurs).</p>
+                    <a asp-controller="Utilisateurs" asp-action="Index" class="btn btn-sm btn-outline-warning mt-2">
+                        Gérer les Comptes <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Carte 4: Consulter les Statistiques -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card shadow-sm h-100 border-0 rounded-3 card-hover-scale">
+                <div class="card-body">
+                    <h5 class="card-title text-danger fw-bold">
+                        <i class="bi bi-graph-up me-2"></i> Statistiques
+                        <span class="badge bg-danger-subtle text-danger float-end">Analyse</span>
+                    </h5>
+                    <p class="card-text text-muted">Visualiser les données de stock, les commandes en attente et l'activité.</p>
+                    <a asp-controller="Home" asp-action="Stats" class="btn btn-sm btn-outline-danger mt-2">
+                        Voir le Reporting <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Ajout de styles personnalisés pour l'effet de survol (optionnel mais recommandé) -->
+<style>
+    /* Assurez-vous d'avoir Bootstrap 5 et Bootstrap Icons liés dans votre _Layout.cshtml */
+
+    .card {
+        transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+    }
+
+    .card-hover-scale:hover {
+        transform: translateY(-5px); /* Léger soulèvement au survol */
+        box-shadow: 0 1rem 3rem rgba(0,0,0,.175) !important; /* Ombre plus prononcée */
+    }
+
+    .badge {
+        font-weight: 600;
+        padding: 0.4em 0.8em;
+    }
+</style>

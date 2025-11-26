@@ -1,10 +1,9 @@
 ﻿using MediatR;
-using SmartSupply.Application.Common;
 using SmartSupply.Domain.Models;
+using System.Collections.Generic;
 
 namespace SmartSupply.Application.Queries.Commandes
 {
-    public record GetCommandesQuery() : IRequest<Result<List<Commande>>>
-    {
-    }
+    // Retourne la liste de toutes les commandes
+    public record GetCommandesQuery() : IRequest<List<Commande>>;
 }

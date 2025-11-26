@@ -1,8 +1,7 @@
 ﻿using MediatR;
-using SmartSupply.Application.Common;
-using SmartSupply.Application.DTOs;
+using SmartSupply.Domain.Models;
 
 namespace SmartSupply.Application.Queries.Produits
 {
-    public record GetProduitsQuery() : IRequest<Result<List<ProduitDto>>>;
+    public record GetProduitByIdQuery(int Id) : IRequest<Produit?>;
 }

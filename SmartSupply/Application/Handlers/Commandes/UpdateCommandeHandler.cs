@@ -1,39 +1,35 @@
-﻿using MediatR;
+﻿// Contenu CORRIGÉ pour le fichier UpdateCommandeHandler.cs
+using MediatR;
 using Microsoft.EntityFrameworkCore;
-using SmartSupply.Application.Common;
+// N'oubliez pas l'using pour la commande de mise à jour
+using SmartSupply.Application.Commands.Commandes; // Doit être l'using pour la commande de mise à jour
+using SmartSupply.Domain.Models;
 using SmartSupply.Infrastructure;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SmartSupply.Application.Handlers.Commandes
 {
-    public class UpdateCommandeHandler : IRequestHandler<UpdateCommandeCommand, Result>
+
+    public class UpdateCommandeHandler : IRequestHandler<UpdateCommandeCommand, bool>
     {
-        private readonly SmartSupplyDbContext _db;
-        public UpdateCommandeHandler(SmartSupplyDbContext db) => _db = db;
+        private readonly SmartSupplyDbContext _context;
 
-        public async Task<Result> Handle(UpdateCommandeCommand request, CancellationToken cancellationToken)
+
+        public UpdateCommandeHandler(SmartSupplyDbContext context) => _context = context;
+
+        public async Task<bool> Handle(UpdateCommandeCommand request, CancellationToken cancellationToken)
         {
-            var cmd = await _db.Commandes.FindAsync(new object?[] { request.Id }, cancellationToken);
-            if (cmd == null) return new Result(false, "Commande introuvable");
+            // --- Logique de mise à jour ---
+            var commande = await _context.Commandes.FindAsync(new object[] { request.Id }, cancellationToken);
 
-            // Mappage simple (tu peux mettre de la validation / règles métiers ici)
-            cmd.ClientNom = request.ClientNom;
-            cmd.ClientEmail = request.ClientEmail;
-            cmd.Statut = request.Statut;
+            if (commande == null)
+            {
+                return false; // Commande non trouvée
+            }
 
-            try
-            {
-                await _db.SaveChangesAsync(cancellationToken);
-                return new Result(true);
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                // Optionnel : gérer concurrence
-                return new Result(false, "Conflit de mise à jour, réessaye.");
-            }
-            catch (Exception ex)
-            {
-                return new Result(false, ex.Message);
-            }
+            await _context.SaveChangesAsync(cancellationToken);
+            return true; // Mise à jour réussie
         }
     }
 }

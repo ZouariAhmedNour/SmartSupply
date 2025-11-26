@@ -1,36 +1,36 @@
-﻿using Microsoft.AspNetCore.Authentication;
+﻿using MediatR;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using SmartSupply.Application.Commands.Utilisateurs;
 using SmartSupply.Domain.Models;
-using SmartSupply.Infrastructure;
+using SmartSupply.Helpers;
 using System.Security.Claims;
 
 namespace SmartSupply1.Controllers
 {
     public class AccountController : Controller
     {
-        private readonly SmartSupplyDbContext _db;
-        private readonly PasswordHasher<Utilisateur> _passwordHasher;
-        public AccountController(SmartSupplyDbContext db)
+        private readonly IMediator _mediator;
+
+        public AccountController(IMediator mediator)
         {
-            _db = db;
-            _passwordHasher = new PasswordHasher<Utilisateur>();
+            _mediator = mediator;
         }
+
         // GET: /Account/Login
         [HttpGet]
         [AllowAnonymous]
         public IActionResult Login(string returnUrl = null)
         {
-            // Si déjà connecté, on redirige immédiatement selon le rôle
             if (User?.Identity?.IsAuthenticated == true)
-            {
                 return RedirectToRoleHomeFromClaims();
-            }
+
             ViewData["ReturnUrl"] = returnUrl;
             return View("~/Views/Account/Login.cshtml");
         }
+
         // POST: /Account/Login
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -41,41 +41,35 @@ namespace SmartSupply1.Controllers
             ViewData["Email"] = email;
             ViewData["RememberMe"] = rememberMe;
 
-            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
+            var user = await _mediator.Send(new LoginUtilisateurCommand(email, password));
+
+            if (user == null)
             {
-                ModelState.AddModelError("", "Email et mot de passe sont requis.");
+                ModelState.AddModelError("", "Email ou mot de passe incorrect.");
                 return View("~/Views/Account/Login.cshtml");
             }
 
-            var user = _db.Utilisateurs.SingleOrDefault(u => u.Email == email);
-            if (user == null)
-            {
-                ModelState.AddModelError("", "Email ou mot de passe invalide.");
-                return View("~/Views/Account/Login.cshtml");
-            }
-            var verify = _passwordHasher.VerifyHashedPassword(user, user.MdpHashed, password);
-            if (verify == PasswordVerificationResult.Failed)
-            {
-                ModelState.AddModelError("", "Email ou mot de passe invalide.");
-                return View("~/Views/Account/Login.cshtml");
-            }
             // Création des claims
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Name, $"{user.Prenom} {user.Nom}"),
                 new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Role, user.Role ?? string.Empty)
+                new Claim(ClaimTypes.Role, user.Role)
             };
+
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var principal = new ClaimsPrincipal(identity);
-            var authProps = new AuthenticationProperties { IsPersistent = rememberMe };
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, authProps);
-            // Redirection : priorité au returnUrl si local, sinon rediriger selon rôle
+
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal,
+                new AuthenticationProperties { IsPersistent = rememberMe });
+
             if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                 return Redirect(returnUrl);
+
             return RedirectToRoleHomeFromUser(user);
         }
+
         // POST: /Account/Logout
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -84,42 +78,20 @@ namespace SmartSupply1.Controllers
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return RedirectToAction("Login", "Account");
         }
-        // GET: /Account/AccessDenied
-        [HttpGet]
-        public IActionResult AccessDenied()
-        {
-            return View();
-        }
-        // ---------- Helpers ----------
-        // Redirige selon le rôle fourni (utiliser après authentification)
-        private IActionResult RedirectToRoleHomeFromUser(Utilisateur user)
-        {
-            var role = user?.Role ?? string.Empty;
-            if (role == "Administrateur") return RedirectToAction("Index", "Admin");
-            if (role == "Magasinier" || role == "Gestionnaire de stock") return RedirectToAction("Index", "Stock");
-            if (role == "ResponsableLogistique" || role == "Responsable") return RedirectToAction("Index", "Commandes");
-            // défaut
-            return RedirectToAction("Index", "Home");
-        }
-        // Redirige selon le rôle présent dans les claims (utilisé si l'utilisateur est déjà authentifié)
-        private IActionResult RedirectToRoleHomeFromClaims()
-        {
-            var role = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value ?? string.Empty;
-            if (role == "Administrateur") return RedirectToAction("Index", "Admin");
-            if (role == "Magasinier" || role == "Gestionnaire de stock") return RedirectToAction("Index", "Stocker");
-            if (role == "ResponsableLogistique" || role == "Responsable") return RedirectToAction("Index", "Commander");
-            return RedirectToAction("Index", "Home");
-        }
+
+        // GET: /Account/SignUp
         [HttpGet]
         [AllowAnonymous]
         public IActionResult SignUp()
         {
-            // Si déjà connecté, redirige selon rôle
             if (User?.Identity?.IsAuthenticated == true)
                 return RedirectToRoleHomeFromClaims();
-            ViewBag.AvailableRoles = new List<string> { "Magasinier", "ResponsableLogistique", "Responsable" }; // Exclure Administrateur pour sécurité
+
+            ViewBag.AvailableRoles = new List<string> { "Magasinier", "ResponsableLogistique", "Responsable" };
             return View("~/Views/Account/SignUp.cshtml");
         }
+
+        // POST: /Account/SignUp
         [HttpPost]
         [ValidateAntiForgeryToken]
         [AllowAnonymous]
@@ -130,65 +102,68 @@ namespace SmartSupply1.Controllers
             ViewData["Email"] = email;
             ViewData["Role"] = role;
 
-            // Validation manuelle (remplace ModelState pour champs requis)
-            if (string.IsNullOrEmpty(nom) || string.IsNullOrEmpty(prenom) || string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password) || string.IsNullOrEmpty(role))
-            {
-                ModelState.AddModelError("", "Tous les champs sont requis.");
-                ViewBag.AvailableRoles = new List<string> { "Magasinier", "ResponsableLogistique", "Responsable" };
-                return View("~/Views/Account/SignUp.cshtml");
-            }
             if (password != confirmPassword)
             {
                 ModelState.AddModelError("ConfirmPassword", "Les mots de passe ne correspondent pas.");
                 ViewBag.AvailableRoles = new List<string> { "Magasinier", "ResponsableLogistique", "Responsable" };
                 return View("~/Views/Account/SignUp.cshtml");
             }
-            if (password.Length < 6)
+
+            var user = await _mediator.Send(new RegisterUtilisateurCommand(nom, prenom, email, password, confirmPassword, role));
+
+            if (user == null)
             {
-                ModelState.AddModelError("Password", "Le mot de passe doit faire au moins 6 caractères.");
+                ModelState.AddModelError("", "Impossible de créer l'utilisateur. Email peut-être déjà utilisé.");
                 ViewBag.AvailableRoles = new List<string> { "Magasinier", "ResponsableLogistique", "Responsable" };
                 return View("~/Views/Account/SignUp.cshtml");
             }
-            if (_db.Utilisateurs.Any(u => u.Email == email))
-            {
-                ModelState.AddModelError("Email", "Cet email est déjà utilisé.");
-                ViewBag.AvailableRoles = new List<string> { "Magasinier", "ResponsableLogistique", "Responsable" };
-                return View("~/Views/Account/SignUp.cshtml");
-            }
-            // Security note: ne pas permettre création d'admins publics (meilleur pratique)
-            // Ici on accepte le rôle venant du formulaire, mais je recommande de forcer un rôle par défaut.
-            var roleToAssign = role;
-            if (string.Equals(roleToAssign, "Administrateur", StringComparison.OrdinalIgnoreCase))
-            {
-                // empêcher la création publique d'admins — forcer au rôle par défaut
-                roleToAssign = "Magasinier";
-            }
-            // Création de l'utilisateur
-            var user = new Utilisateur
-            {
-                Nom = nom,
-                Prenom = prenom,
-                Email = email,
-                Role = roleToAssign,
-                DateCreation = DateTime.UtcNow
-            };
-            // Hash du mot de passe
-            user.MdpHashed = _passwordHasher.HashPassword(user, password);
-            _db.Utilisateurs.Add(user);
-            _db.SaveChanges();
-            // Auto-login après inscription : création des claims et sign in
+
+            // Auto-login
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Name, $"{user.Prenom} {user.Nom}"),
-                new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
-                new Claim(ClaimTypes.Role, user.Role ?? string.Empty)
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.Role, user.Role)
             };
+
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            var principal = new ClaimsPrincipal(identity);
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
-            // Redirection selon rôle
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
+
             return RedirectToRoleHomeFromUser(user);
+        }
+
+        // Helpers : redirections selon rôle
+        private IActionResult RedirectToRoleHomeFromUser(Utilisateur user)
+        {
+            var role = user?.Role ?? string.Empty;
+
+            if (role == Roles.Admin)
+                return RedirectToAction("Index", "Admin");
+
+            if (role == Roles.Magasinier || role == Roles.GestionnaireStock)
+                return RedirectToAction("Index", "Stocker");
+
+            if (role == Roles.ResponsableLogistique || role == Roles.Responsable)
+                return RedirectToAction("Index", "Commander");
+
+            return RedirectToAction("Index", "Home");
+        }
+
+        private IActionResult RedirectToRoleHomeFromClaims()
+        {
+            var role = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value ?? "";
+
+            if (role == Roles.Admin)
+                return RedirectToAction("Index", "Admin");
+
+            if (role == Roles.Magasinier || role == Roles.GestionnaireStock)
+                return RedirectToAction("Index", "Stocker");
+
+            if (role == Roles.ResponsableLogistique || role == Roles.Responsable)
+                return RedirectToAction("Index", "Commander");
+
+            return RedirectToAction("Index", "Home");
         }
     }
 }

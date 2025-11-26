@@ -1,5 +1,5 @@
 ﻿using MediatR;
-using SmartSupply.Application.Common;
+using SmartSupply.Domain.Models;
 
 namespace SmartSupply.Application.Commands.Utilisateurs
 {
@@ -9,6 +9,5 @@ namespace SmartSupply.Application.Commands.Utilisateurs
         string Prenom,
         string Email,
         string Role
-    ) : IRequest<Result>;
-
+    ) : IRequest<Utilisateur?>;
 }

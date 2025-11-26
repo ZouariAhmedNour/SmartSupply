@@ -1,25 +1,30 @@
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
-using SmartSupply.Application.Common;
 using SmartSupply.Application.Queries.Commandes;
 using SmartSupply.Domain.Models;
 using SmartSupply.Infrastructure;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SmartSupply.Application.Handlers.Commandes
 {
-    public class GetCommandesHandler : IRequestHandler<GetCommandesQuery, Result<List<Commande>>>
+    public class GetCommandesHandler : IRequestHandler<GetCommandesQuery, List<Commande>>
     {
-        private readonly SmartSupplyDbContext context;
-        public GetCommandesHandler(SmartSupplyDbContext dbContext) => context = dbContext;
+        private readonly SmartSupplyDbContext _db;
 
-        public async Task<Result<List<Commande>>> Handle(GetCommandesQuery request, CancellationToken cancellationToken)
+        public GetCommandesHandler(SmartSupplyDbContext db)
         {
-            var list = await context.Commandes
+            _db = db;
+        }
+
+        public async Task<List<Commande>> Handle(GetCommandesQuery request, CancellationToken cancellationToken)
+        {
+            return await _db.Commandes
                 .Include(c => c.Lignes)
                 .OrderByDescending(c => c.DateCreation)
                 .ToListAsync(cancellationToken);
-            return new Result<List<Commande>>(true, list);
         }
-
     }
 }

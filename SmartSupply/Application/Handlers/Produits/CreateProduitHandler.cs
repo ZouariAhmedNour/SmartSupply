@@ -1,21 +1,25 @@
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using SmartSupply.Application.Commands.Produits;
-using SmartSupply.Application.Common;
 using SmartSupply.Domain.Models;
 using SmartSupply.Infrastructure;
 
 namespace SmartSupply.Application.Handlers.Produits
 {
-    public class CreateProduitHandler : IRequestHandler<CreateProduitCommand, Result<int>>
+    public class CreateProduitHandler : IRequestHandler<CreateProduitCommand, int>
     {
         private readonly SmartSupplyDbContext _context;
 
-        public async Task<Result<int>> Handle(CreateProduitCommand request, CancellationToken cancellationToken)
+        public CreateProduitHandler(SmartSupplyDbContext context)
         {
-            // vérifie duplicat SKU
+            _context = context;
+        }
+
+        public async Task<int> Handle(CreateProduitCommand request, CancellationToken cancellationToken)
+        {
+            // Vérifie duplicat SKU
             if (await _context.Produits.AnyAsync(p => p.CodeSKU == request.CodeSKU, cancellationToken))
-                return new Result<int>(false, default, "Code SKU déjà existant");
+                throw new InvalidOperationException("Code SKU déjà existant");
 
             var produit = new Produit
             {
@@ -29,7 +33,7 @@ namespace SmartSupply.Application.Handlers.Produits
             _context.Produits.Add(produit);
             await _context.SaveChangesAsync(cancellationToken);
 
-            return new Result<int>(true, produit.Id);
+            return produit.Id; // Retourne l'ID du produit créé
         }
     }
 }

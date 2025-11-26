@@ -1,16 +1,8 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
 using SmartSupply.Application.Commands.Commandes;
-using SmartSupply.Application.Handlers.Commandes;
 using SmartSupply.Application.Queries.Commandes;
 using SmartSupply.Domain.Models;
-using SmartSupply.Infrastructure;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace SmartSupply.API.Controllers
 {
@@ -20,110 +12,91 @@ namespace SmartSupply.API.Controllers
 
         public CommandesController(IMediator mediator) => _mediator = mediator;
 
-
         // GET: Commandes
         public async Task<IActionResult> Index()
         {
-            var res = await _mediator.Send(new GetCommandesQuery());
-            if (!res.IsSuccess) return View("Error", res.Error);
-            return View(res.Data);
+            var commandes = await _mediator.Send(new GetCommandesQuery());
+
+            return View(commandes); // commandes = List<Commande>
         }
 
         // GET: Commandes/Details/5
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null) return NotFound();
-            var res = await _mediator.Send(new GetCommandeByIdQuery(id.Value));
-            if (!res.IsSuccess) return NotFound();
-            return View(res.Data);
+            if (id is null) return NotFound();
+
+            var commande = await _mediator.Send(new GetCommandeByIdQuery(id.Value));
+            if (commande is null) return NotFound();
+
+            return View(commande);
         }
 
         // GET: Commandes/Create
         public IActionResult Create() => View();
 
-
         // POST: Commandes/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(string ClientNom, string ClientEmail, int ProduitId = 0, int Quantite = 0, decimal PrixUnitaire = 0m)
+        public async Task<IActionResult> Create(string ClientNom, string ClientEmail, int ProduitId, int Quantite, decimal PrixUnitaire)
         {
             if (string.IsNullOrWhiteSpace(ClientNom) || string.IsNullOrWhiteSpace(ClientEmail))
             {
-                ModelState.AddModelError("", "Le nom et l'email du client sont requis.");
+                ModelState.AddModelError("", "Le nom et l'email sont requis.");
                 return View();
             }
+
+            var lignes = new List<LigneCommande>();
+
+            if (ProduitId > 0 && Quantite > 0)
             {
-                var lignes = new List<LigneCommande>();
-                if (ProduitId > 0 && Quantite > 0)
+                lignes.Add(new LigneCommande
                 {
-                    lignes.Add(new LigneCommande
-                    {
-                        ProduitId = ProduitId,
-                        Quantite = Quantite,
-                        PrixUnitaire = PrixUnitaire // 0 signifie "pas fourni" selon le handler
-                    });
-                }
-
-                var cmd = new CreateCommandeCommand(ClientNom, ClientEmail, lignes);
-                var res = await _mediator.Send(cmd);
-                if (!res.IsSuccess)
-                {
-                    ModelState.AddModelError("", res.Error);
-                    return View();
-                }
-
-                return RedirectToAction(nameof(Index));
+                    ProduitId = ProduitId,
+                    Quantite = Quantite,
+                    PrixUnitaire = PrixUnitaire
+                });
             }
+
+            await _mediator.Send(new CreateCommandeCommand(ClientNom, ClientEmail, lignes));
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: Commandes/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null) return NotFound();
+            if (id is null) return NotFound();
 
+            var commande = await _mediator.Send(new GetCommandeByIdQuery(id.Value));
+            if (commande is null) return NotFound();
 
-            var res = await _mediator.Send(new GetCommandeByIdQuery(id.Value));
-            if (!res.IsSuccess) return NotFound();
-            return View(res.Data);
+            return View(commande);
         }
 
         // POST: Commandes/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, string ClientNom, string ClientEmail, string Statut)
         {
-            // validation simple
             if (string.IsNullOrWhiteSpace(ClientNom) || string.IsNullOrWhiteSpace(ClientEmail))
             {
                 ModelState.AddModelError("", "Nom et email requis.");
-                // recharger la commande pour la vue
-                var getErr = await _mediator.Send(new GetCommandeByIdQuery(id));
-                return View(getErr.Data);
+                var commande = await _mediator.Send(new GetCommandeByIdQuery(id));
+                return View(commande);
             }
 
-            var cmd = new UpdateCommandeCommand(id, ClientNom, ClientEmail, Statut);
-            var res = await _mediator.Send(cmd);
-            if (!res.IsSuccess)
-            {
-                ModelState.AddModelError("", res.Error);
-                var get = await _mediator.Send(new GetCommandeByIdQuery(id));
-                return View(get.Data);
-            }
-
+            await _mediator.Send(new UpdateCommandeCommand(id, ClientNom, ClientEmail, Statut));
             return RedirectToAction(nameof(Index));
         }
 
         // GET: Commandes/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null) return NotFound();
-            var res = await _mediator.Send(new GetCommandeByIdQuery(id.Value));
-            if (!res.IsSuccess) return NotFound();
-            return View(res.Data); // View attend Commande
+            if (id is null) return NotFound();
+
+            var commande = await _mediator.Send(new GetCommandeByIdQuery(id.Value));
+            if (commande is null) return NotFound();
+
+            return View(commande);
         }
 
         // POST: Commandes/Delete/5
@@ -131,42 +104,24 @@ namespace SmartSupply.API.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var res = await _mediator.Send(new DeleteCommandeCommand(id));
-            if (!res.IsSuccess)
-            {
-                ModelState.AddModelError("", res.Error);
-                var get = await _mediator.Send(new GetCommandeByIdQuery(id));
-                return View(get.Data);
-            }
+            await _mediator.Send(new DeleteCommandeCommand(id));
             return RedirectToAction(nameof(Index));
         }
 
-
-    }
-
-
-    [HttpPost]
+        // POST: Commandes/ChangeStatut
+        [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ChangeStatut(int id, string statut)
         {
-            // validation basique
             if (string.IsNullOrWhiteSpace(statut))
             {
                 ModelState.AddModelError("", "Statut requis.");
-                var getErr = await _mediator.Send(new GetCommandeByIdQuery(id));
-                return View("Edit", getErr.Data); // ou RedirectToAction("Edit", new { id })
+                var commande = await _mediator.Send(new GetCommandeByIdQuery(id));
+                return View("Edit", commande);
             }
 
-            var res = await _mediator.Send(new UpdateCommandeStatutCommand(id, statut));
-            if (!res.IsSuccess)
-            {
-                ModelState.AddModelError("", res.Error);
-                var get = await _mediator.Send(new GetCommandeByIdQuery(id));
-                return View("Edit", get.Data);
-            }
-
+            await _mediator.Send(new UpdateCommandeStatutCommand(id, statut));
             return RedirectToAction(nameof(Index));
         }
     }
-    }
-
+}

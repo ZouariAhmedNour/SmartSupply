@@ -1,148 +1,123 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿// SmartSupply1.Controllers.StocksController.cs
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
+using MediatR;
 using SmartSupply.Domain.Models;
-using SmartSupply.Infrastructure;
+using SmartSupply.Application.Commands.Stocks;
+using SmartSupply.Application.Queries.Stocks;
+using SmartSupply.Application.Queries.Entrepots;
+using SmartSupply.Application.Queries.Produits;
 
-namespace SmartSupply.API.Controllers
+namespace SmartSupply1.Controllers
 {
     public class StocksController : Controller
     {
-        private readonly SmartSupplyDbContext _context;
+        private readonly IMediator _mediator;
 
-        public StocksController(SmartSupplyDbContext context)
+        public StocksController(IMediator mediator)
         {
-            _context = context;
+            _mediator = mediator;
         }
 
+        #region Index
         // GET: Stocks
         public async Task<IActionResult> Index()
         {
-            var smartSupplyDbContext = _context.Stocks.Include(s => s.Entrepot).Include(s => s.Produit);
-            return View(await smartSupplyDbContext.ToListAsync());
+            var list = await _mediator.Send(new GetStocksQuery());
+            return View(list);
         }
+        #endregion
 
+        #region Details
         // GET: Stocks/Details/5
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
-            var stock = await _context.Stocks
-                .Include(s => s.Entrepot)
-                .Include(s => s.Produit)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (stock == null)
-            {
-                return NotFound();
-            }
+            var stock = await _mediator.Send(new GetStockByIdQuery(id.Value));
+            if (stock == null) return NotFound();
 
             return View(stock);
         }
+        #endregion
 
+        #region Create
         // GET: Stocks/Create
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            ViewData["EntrepotId"] = new SelectList(_context.Entrepots, "Id", "Id");
-            ViewData["ProduitId"] = new SelectList(_context.Produits, "Id", "Id");
+            await FillSelectLists();
             return View();
         }
 
         // POST: Stocks/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,ProduitId,EntrepotId,QuantiteDisponible,SeuilAlerte")] Stock stock)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                _context.Add(stock);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                await FillSelectLists();
+                return View(stock);
             }
-            ViewData["EntrepotId"] = new SelectList(_context.Entrepots, "Id", "Id", stock.EntrepotId);
-            ViewData["ProduitId"] = new SelectList(_context.Produits, "Id", "Id", stock.ProduitId);
-            return View(stock);
-        }
 
+            var created = await _mediator.Send(new CreateStockCommand(stock.ProduitId, stock.EntrepotId, stock.QuantiteDisponible, stock.SeuilAlerte));
+            if (!created)
+            {
+                ModelState.AddModelError("", "Impossible de créer le stock (doublon produit+entrepôt, identifiants invalides ou données incorrectes).");
+                await FillSelectLists();
+                return View(stock);
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+        #endregion
+
+        #region Edit
         // GET: Stocks/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
-            var stock = await _context.Stocks.FindAsync(id);
-            if (stock == null)
-            {
-                return NotFound();
-            }
-            ViewData["EntrepotId"] = new SelectList(_context.Entrepots, "Id", "Id", stock.EntrepotId);
-            ViewData["ProduitId"] = new SelectList(_context.Produits, "Id", "Id", stock.ProduitId);
+            var stock = await _mediator.Send(new GetStockByIdQuery(id.Value));
+            if (stock == null) return NotFound();
+
+            await FillSelectLists();
             return View(stock);
         }
 
         // POST: Stocks/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,ProduitId,EntrepotId,QuantiteDisponible,SeuilAlerte")] Stock stock)
         {
-            if (id != stock.Id)
+            if (id != stock.Id) return NotFound();
+
+            if (!ModelState.IsValid)
             {
-                return NotFound();
+                await FillSelectLists();
+                return View(stock);
             }
 
-            if (ModelState.IsValid)
+            var updated = await _mediator.Send(new UpdateStockCommand(stock.Id, stock.ProduitId, stock.EntrepotId, stock.QuantiteDisponible, stock.SeuilAlerte));
+            if (updated == null)
             {
-                try
-                {
-                    _context.Update(stock);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!StockExists(stock.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
+                ModelState.AddModelError("", "Impossible de mettre à jour (stock introuvable, doublon produit+entrepôt ou données invalides).");
+                await FillSelectLists();
+                return View(stock);
             }
-            ViewData["EntrepotId"] = new SelectList(_context.Entrepots, "Id", "Id", stock.EntrepotId);
-            ViewData["ProduitId"] = new SelectList(_context.Produits, "Id", "Id", stock.ProduitId);
-            return View(stock);
+
+            return RedirectToAction(nameof(Index));
         }
+        #endregion
 
+        #region Delete
         // GET: Stocks/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
-            var stock = await _context.Stocks
-                .Include(s => s.Entrepot)
-                .Include(s => s.Produit)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (stock == null)
-            {
-                return NotFound();
-            }
+            var stock = await _mediator.Send(new GetStockByIdQuery(id.Value));
+            if (stock == null) return NotFound();
 
             return View(stock);
         }
@@ -152,19 +127,29 @@ namespace SmartSupply.API.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var stock = await _context.Stocks.FindAsync(id);
-            if (stock != null)
+            var deleted = await _mediator.Send(new DeleteStockCommand(id));
+            if (!deleted)
             {
-                _context.Stocks.Remove(stock);
+                ModelState.AddModelError("", "Impossible de supprimer le stock (introuvable ou erreur).");
+                var s = await _mediator.Send(new GetStockByIdQuery(id));
+                return View(s);
             }
 
-            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
+        #endregion
 
-        private bool StockExists(int id)
+        #region Helpers
+        private async Task FillSelectLists()
         {
-            return _context.Stocks.Any(e => e.Id == id);
+            // Utilise les queries existantes pour obtenir Entrepots et Produits
+            var entrepots = await _mediator.Send(new GetEntrepotsQuery());
+            var produits = await _mediator.Send(new GetProduitsQuery());
+
+            // Remplacer les affichages "Id" par "Nom" si tu as ces propriétés dans les vues
+            ViewData["EntrepotId"] = new SelectList(entrepots, "Id", "Nom");
+            ViewData["ProduitId"] = new SelectList(produits, "Id", "Nom");
         }
+        #endregion
     }
 }

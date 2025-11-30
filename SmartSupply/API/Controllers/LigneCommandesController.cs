@@ -1,150 +1,141 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿// SmartSupply1.Controllers.LigneCommandesController.cs
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using SmartSupply.Application.Commands.LigneCommandeCommand;
+using SmartSupply.Application.Commands.LigneCommandes;
+using SmartSupply.Application.Queries.LigneCommandes;
 using SmartSupply.Domain.Models;
 using SmartSupply.Infrastructure;
 
-namespace SmartSupply.API.Controllers
+namespace SmartSupply1.Controllers
 {
     public class LigneCommandesController : Controller
     {
+        private readonly IMediator _mediator;
         private readonly SmartSupplyDbContext _context;
 
-        public LigneCommandesController(SmartSupplyDbContext context)
+        public LigneCommandesController(IMediator mediator, SmartSupplyDbContext context)
         {
+            _mediator = mediator;
             _context = context;
         }
 
+        #region Index
         // GET: LigneCommandes
         public async Task<IActionResult> Index()
         {
-            var smartSupplyDbContext = _context.LignesCommande.Include(l => l.Commande).Include(l => l.Produit);
-            return View(await smartSupplyDbContext.ToListAsync());
+            var list = await _mediator.Send(new GetLigneCommandesQuery());
+            return View(list);
         }
+        #endregion
 
+        #region Details
         // GET: LigneCommandes/Details/5
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
-            var ligneCommande = await _context.LignesCommande
-                .Include(l => l.Commande)
-                .Include(l => l.Produit)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (ligneCommande == null)
-            {
-                return NotFound();
-            }
+            var ligne = await _mediator.Send(new GetLigneCommandeByIdQuery(id.Value));
+            if (ligne == null) return NotFound();
 
-            return View(ligneCommande);
+            return View(ligne);
         }
+        #endregion
 
+        #region Create
         // GET: LigneCommandes/Create
         public IActionResult Create()
         {
-            ViewData["CommandeId"] = new SelectList(_context.Commandes, "Id", "Id");
-            ViewData["ProduitId"] = new SelectList(_context.Produits, "Id", "Id");
+            FillSelectLists();
             return View();
         }
 
         // POST: LigneCommandes/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,CommandeId,ProduitId,Quantite,PrixUnitaire")] LigneCommande ligneCommande)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                _context.Add(ligneCommande);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                FillSelectLists();
+                return View(ligneCommande);
             }
-            ViewData["CommandeId"] = new SelectList(_context.Commandes, "Id", "Id", ligneCommande.CommandeId);
-            ViewData["ProduitId"] = new SelectList(_context.Produits, "Id", "Id", ligneCommande.ProduitId);
-            return View(ligneCommande);
-        }
 
+            var created = await _mediator.Send(new CreateLigneCommandeCommand(
+                ligneCommande.CommandeId,
+                ligneCommande.ProduitId,
+                ligneCommande.Quantite,
+                ligneCommande.PrixUnitaire
+            ));
+
+            if (!created)
+            {
+                ModelState.AddModelError("", "Impossible de créer la ligne (références invalides ou données incorrectes).");
+                FillSelectLists();
+                return View(ligneCommande);
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+        #endregion
+
+        #region Edit
         // GET: LigneCommandes/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
-            var ligneCommande = await _context.LignesCommande.FindAsync(id);
-            if (ligneCommande == null)
-            {
-                return NotFound();
-            }
-            ViewData["CommandeId"] = new SelectList(_context.Commandes, "Id", "Id", ligneCommande.CommandeId);
-            ViewData["ProduitId"] = new SelectList(_context.Produits, "Id", "Id", ligneCommande.ProduitId);
-            return View(ligneCommande);
+            var ligne = await _mediator.Send(new GetLigneCommandeByIdQuery(id.Value));
+            if (ligne == null) return NotFound();
+
+            FillSelectLists();
+            return View(ligne);
         }
 
         // POST: LigneCommandes/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,CommandeId,ProduitId,Quantite,PrixUnitaire")] LigneCommande ligneCommande)
         {
-            if (id != ligneCommande.Id)
+            if (id != ligneCommande.Id) return NotFound();
+
+            if (!ModelState.IsValid)
             {
-                return NotFound();
+                FillSelectLists();
+                return View(ligneCommande);
             }
 
-            if (ModelState.IsValid)
+            var updated = await _mediator.Send(new UpdateLigneCommandeCommand(
+                ligneCommande.Id,
+                ligneCommande.CommandeId,
+                ligneCommande.ProduitId,
+                ligneCommande.Quantite,
+                ligneCommande.PrixUnitaire
+            ));
+
+            if (updated == null)
             {
-                try
-                {
-                    _context.Update(ligneCommande);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!LigneCommandeExists(ligneCommande.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
+                ModelState.AddModelError("", "Impossible de mettre à jour (ligne introuvable ou données invalides).");
+                FillSelectLists();
+                return View(ligneCommande);
             }
-            ViewData["CommandeId"] = new SelectList(_context.Commandes, "Id", "Id", ligneCommande.CommandeId);
-            ViewData["ProduitId"] = new SelectList(_context.Produits, "Id", "Id", ligneCommande.ProduitId);
-            return View(ligneCommande);
+
+            return RedirectToAction(nameof(Index));
         }
+        #endregion
 
+        #region Delete
         // GET: LigneCommandes/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
-            var ligneCommande = await _context.LignesCommande
-                .Include(l => l.Commande)
-                .Include(l => l.Produit)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (ligneCommande == null)
-            {
-                return NotFound();
-            }
+            var ligne = await _mediator.Send(new GetLigneCommandeByIdQuery(id.Value));
+            if (ligne == null) return NotFound();
 
-            return View(ligneCommande);
+            return View(ligne);
         }
 
         // POST: LigneCommandes/Delete/5
@@ -152,19 +143,33 @@ namespace SmartSupply.API.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var ligneCommande = await _context.LignesCommande.FindAsync(id);
-            if (ligneCommande != null)
+            var deleted = await _mediator.Send(new DeleteLigneCommandeCommand(id));
+            if (!deleted)
             {
-                _context.LignesCommande.Remove(ligneCommande);
+                ModelState.AddModelError("", "Impossible de supprimer la ligne (introuvable ou erreur).");
+                var l = await _mediator.Send(new GetLigneCommandeByIdQuery(id));
+                return View(l);
             }
 
-            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
+        }
+        #endregion
+
+        #region Helpers
+        private void FillSelectLists()
+        {
+            // Utilise le DbContext pour remplir les SelectList (ou remplace par des queries MediatR si tu préfères)
+            var commandes = _context.Commandes.AsNoTracking().ToList();
+            var produits = _context.Produits.AsNoTracking().ToList();
+
+            ViewData["CommandeId"] = new SelectList(commandes, "Id", "Id");
+            ViewData["ProduitId"] = new SelectList(produits, "Id", "Nom");
         }
 
         private bool LigneCommandeExists(int id)
         {
             return _context.LignesCommande.Any(e => e.Id == id);
         }
+        #endregion
     }
 }

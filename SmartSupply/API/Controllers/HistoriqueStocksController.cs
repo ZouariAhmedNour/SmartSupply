@@ -1,137 +1,141 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿// SmartSupply1.Controllers.HistoriqueStocksController.cs
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
+using MediatR;
 using SmartSupply.Domain.Models;
-using SmartSupply.Infrastructure;
+using SmartSupply.Application.Commands.HistoriqueStocks;
+using SmartSupply.Application.Queries.HistoriqueStocks;
+using SmartSupply.Application.Queries.Produits;
+using SmartSupply.Application.Queries.Entrepots;
 
-namespace SmartSupply.API.Controllers
+namespace SmartSupply1.Controllers
 {
     public class HistoriqueStocksController : Controller
     {
-        private readonly SmartSupplyDbContext _context;
+        private readonly IMediator _mediator;
 
-        public HistoriqueStocksController(SmartSupplyDbContext context)
+        public HistoriqueStocksController(IMediator mediator)
         {
-            _context = context;
+            _mediator = mediator;
         }
 
+        #region Index
         // GET: HistoriqueStocks
         public async Task<IActionResult> Index()
         {
-            return View(await _context.HistoriqueStock.ToListAsync());
+            var list = await _mediator.Send(new GetHistoriqueStocksQuery());
+            return View(list);
         }
+        #endregion
 
+        #region Details
         // GET: HistoriqueStocks/Details/5
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
-            var historiqueStock = await _context.HistoriqueStock
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (historiqueStock == null)
-            {
-                return NotFound();
-            }
+            var h = await _mediator.Send(new GetHistoriqueStockByIdQuery(id.Value));
+            if (h == null) return NotFound();
 
-            return View(historiqueStock);
+            return View(h);
         }
+        #endregion
 
+        #region Create
         // GET: HistoriqueStocks/Create
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
+            await FillSelectLists();
             return View();
         }
 
         // POST: HistoriqueStocks/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,ProduitId,EntrepotId,Quantite,DateMouvement,TypeMouvement,Commentaire")] HistoriqueStock historiqueStock)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                _context.Add(historiqueStock);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                await FillSelectLists();
+                return View(historiqueStock);
             }
-            return View(historiqueStock);
-        }
 
+            var created = await _mediator.Send(new CreateHistoriqueStockCommand(
+                historiqueStock.ProduitId,
+                historiqueStock.EntrepotId,
+                historiqueStock.Quantite,
+                historiqueStock.TypeMouvement,
+                historiqueStock.Commentaire
+            ));
+
+            if (!created)
+            {
+                ModelState.AddModelError("", "Impossible de créer l'historique (références invalides ou données incorrectes).");
+                await FillSelectLists();
+                return View(historiqueStock);
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+        #endregion
+
+        #region Edit
         // GET: HistoriqueStocks/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
-            var historiqueStock = await _context.HistoriqueStock.FindAsync(id);
-            if (historiqueStock == null)
-            {
-                return NotFound();
-            }
-            return View(historiqueStock);
+            var h = await _mediator.Send(new GetHistoriqueStockByIdQuery(id.Value));
+            if (h == null) return NotFound();
+
+            await FillSelectLists();
+            return View(h);
         }
 
         // POST: HistoriqueStocks/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,ProduitId,EntrepotId,Quantite,DateMouvement,TypeMouvement,Commentaire")] HistoriqueStock historiqueStock)
         {
-            if (id != historiqueStock.Id)
+            if (id != historiqueStock.Id) return NotFound();
+
+            if (!ModelState.IsValid)
             {
-                return NotFound();
+                await FillSelectLists();
+                return View(historiqueStock);
             }
 
-            if (ModelState.IsValid)
+            var updated = await _mediator.Send(new UpdateHistoriqueStockCommand(
+                historiqueStock.Id,
+                historiqueStock.ProduitId,
+                historiqueStock.EntrepotId,
+                historiqueStock.Quantite,
+                historiqueStock.DateMouvement,
+                historiqueStock.TypeMouvement,
+                historiqueStock.Commentaire
+            ));
+
+            if (updated == null)
             {
-                try
-                {
-                    _context.Update(historiqueStock);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!HistoriqueStockExists(historiqueStock.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
+                ModelState.AddModelError("", "Impossible de mettre à jour l'historique (introuvable ou données invalides).");
+                await FillSelectLists();
+                return View(historiqueStock);
             }
-            return View(historiqueStock);
+
+            return RedirectToAction(nameof(Index));
         }
+        #endregion
 
+        #region Delete
         // GET: HistoriqueStocks/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
-            var historiqueStock = await _context.HistoriqueStock
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (historiqueStock == null)
-            {
-                return NotFound();
-            }
+            var h = await _mediator.Send(new GetHistoriqueStockByIdQuery(id.Value));
+            if (h == null) return NotFound();
 
-            return View(historiqueStock);
+            return View(h);
         }
 
         // POST: HistoriqueStocks/Delete/5
@@ -139,19 +143,27 @@ namespace SmartSupply.API.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var historiqueStock = await _context.HistoriqueStock.FindAsync(id);
-            if (historiqueStock != null)
+            var deleted = await _mediator.Send(new DeleteHistoriqueStockCommand(id));
+            if (!deleted)
             {
-                _context.HistoriqueStock.Remove(historiqueStock);
+                ModelState.AddModelError("", "Impossible de supprimer l'historique (introuvable ou erreur).");
+                var h = await _mediator.Send(new GetHistoriqueStockByIdQuery(id));
+                return View(h);
             }
 
-            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
+        #endregion
 
-        private bool HistoriqueStockExists(int id)
+        #region Helpers
+        private async Task FillSelectLists()
         {
-            return _context.HistoriqueStock.Any(e => e.Id == id);
+            var produits = await _mediator.Send(new GetProduitsQuery());
+            var entrepots = await _mediator.Send(new GetEntrepotsQuery());
+
+            ViewData["ProduitId"] = new SelectList(produits, "Id", "Nom");
+            ViewData["EntrepotId"] = new SelectList(entrepots, "Id", "Nom");
         }
+        #endregion
     }
 }

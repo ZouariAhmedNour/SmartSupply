@@ -6,19 +6,18 @@ using SmartSupply.Infrastructure;
 
 namespace SmartSupply.Application.Handlers.Produits
 {
-    public class GetProduitByIdHandler : IRequestHandler<GetProduitByIdQuery, Produit?>
+    public class GetProduitsHandler : IRequestHandler<GetProduitsQuery, List<Produit>>
     {
-        private readonly SmartSupplyDbContext _context;
+        private readonly SmartSupplyDbContext _db;
 
-        public GetProduitByIdHandler(SmartSupplyDbContext context)
+        public GetProduitsHandler(SmartSupplyDbContext db)
         {
-            _context = context;
+            _db = db;
         }
 
-        public async Task<Produit?> Handle(GetProduitByIdQuery request, CancellationToken cancellationToken)
+        public async Task<List<Produit>> Handle(GetProduitsQuery request, CancellationToken cancellationToken)
         {
-            return await _context.Produits
-                .FirstOrDefaultAsync(p => p.Id == request.Id, cancellationToken);
+            return await _db.Produits.AsNoTracking().ToListAsync(cancellationToken);
         }
     }
 }

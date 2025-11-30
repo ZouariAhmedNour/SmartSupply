@@ -6,20 +6,29 @@ using SmartSupply.Infrastructure;
 
 namespace SmartSupply.Application.Handlers.Produits
 {
-    public class CreateProduitHandler : IRequestHandler<CreateProduitCommand, int>
+    public class CreateProduitHandler : IRequestHandler<CreateProduitCommand, bool>
     {
-        private readonly SmartSupplyDbContext _context;
+        private readonly SmartSupplyDbContext _db;
 
-        public CreateProduitHandler(SmartSupplyDbContext context)
+        public CreateProduitHandler(SmartSupplyDbContext db)
         {
-            _context = context;
+            _db = db;
         }
 
-        public async Task<int> Handle(CreateProduitCommand request, CancellationToken cancellationToken)
+        public async Task<bool> Handle(CreateProduitCommand request, CancellationToken cancellationToken)
         {
-            // Vérifie duplicat SKU
-            if (await _context.Produits.AnyAsync(p => p.CodeSKU == request.CodeSKU, cancellationToken))
-                throw new InvalidOperationException("Code SKU déjà existant");
+            // validations simples
+            if (string.IsNullOrWhiteSpace(request.Nom) ||
+                string.IsNullOrWhiteSpace(request.CodeSKU))
+                return false;
+
+            if (request.PrixUnitaire <= 0)
+                return false;
+
+            // unicité sur CodeSKU (optionnel mais recommandé)
+            var exists = await _db.Produits.AnyAsync(p => p.CodeSKU == request.CodeSKU, cancellationToken);
+            if (exists)
+                return false;
 
             var produit = new Produit
             {
@@ -30,10 +39,10 @@ namespace SmartSupply.Application.Handlers.Produits
                 DateCreation = DateTime.UtcNow
             };
 
-            _context.Produits.Add(produit);
-            await _context.SaveChangesAsync(cancellationToken);
+            _db.Produits.Add(produit);
+            await _db.SaveChangesAsync(cancellationToken);
 
-            return produit.Id; // Retourne l'ID du produit créé
+            return true;
         }
     }
 }

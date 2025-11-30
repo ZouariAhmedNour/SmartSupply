@@ -1,44 +1,35 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿// SmartSupply1.Controllers.ProduitsController.cs
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
+using MediatR;
 using SmartSupply.Domain.Models;
-using SmartSupply.Infrastructure;
+using SmartSupply.Application.Commands.Produits;
+using SmartSupply.Application.Queries.Produits;
 
-namespace SmartSupply.API.Controllers
+namespace SmartSupply1.Controllers
 {
     public class ProduitsController : Controller
     {
-        private readonly SmartSupplyDbContext _context;
+        private readonly IMediator _mediator;
 
-        public ProduitsController(SmartSupplyDbContext context)
+        public ProduitsController(IMediator mediator)
         {
-            _context = context;
+            _mediator = mediator;
         }
 
         // GET: Produits
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Produits.ToListAsync());
+            var list = await _mediator.Send(new GetProduitsQuery());
+            return View(list);
         }
 
         // GET: Produits/Details/5
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
-            var produit = await _context.Produits
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (produit == null)
-            {
-                return NotFound();
-            }
+            var produit = await _mediator.Send(new GetProduitByIdQuery(id.Value));
+            if (produit == null) return NotFound();
 
             return View(produit);
         }
@@ -50,86 +41,61 @@ namespace SmartSupply.API.Controllers
         }
 
         // POST: Produits/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,Nom,Description,CodeSKU,PrixUnitaire,DateCreation")] Produit produit)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
+                return View(produit);
+
+            var created = await _mediator.Send(new CreateProduitCommand(produit.Nom, produit.Description, produit.CodeSKU, produit.PrixUnitaire));
+            if (!created)
             {
-                _context.Add(produit);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                ModelState.AddModelError("", "Impossible de créer le produit (CodeSKU peut-être déjà utilisé ou données invalides).");
+                return View(produit);
             }
-            return View(produit);
+
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: Produits/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
-            var produit = await _context.Produits.FindAsync(id);
-            if (produit == null)
-            {
-                return NotFound();
-            }
+            var produit = await _mediator.Send(new GetProduitByIdQuery(id.Value));
+            if (produit == null) return NotFound();
+
             return View(produit);
         }
 
         // POST: Produits/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,Nom,Description,CodeSKU,PrixUnitaire,DateCreation")] Produit produit)
         {
-            if (id != produit.Id)
+            if (id != produit.Id) return NotFound();
+
+            if (!ModelState.IsValid)
+                return View(produit);
+
+            var updated = await _mediator.Send(new UpdateProduitCommand(produit.Id, produit.Nom, produit.Description, produit.CodeSKU, produit.PrixUnitaire));
+            if (updated == null)
             {
-                return NotFound();
+                ModelState.AddModelError("", "Impossible de mettre à jour (produit introuvable ou CodeSKU déjà utilisé).");
+                return View(produit);
             }
 
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(produit);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!ProduitExists(produit.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            return View(produit);
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: Produits/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
-            var produit = await _context.Produits
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (produit == null)
-            {
-                return NotFound();
-            }
+            var produit = await _mediator.Send(new GetProduitByIdQuery(id.Value));
+            if (produit == null) return NotFound();
 
             return View(produit);
         }
@@ -139,19 +105,15 @@ namespace SmartSupply.API.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var produit = await _context.Produits.FindAsync(id);
-            if (produit != null)
+            var deleted = await _mediator.Send(new DeleteProduitCommand(id));
+            if (!deleted)
             {
-                _context.Produits.Remove(produit);
+                ModelState.AddModelError("", "Impossible de supprimer le produit (introuvable ou erreur).");
+                var p = await _mediator.Send(new GetProduitByIdQuery(id));
+                return View(p);
             }
 
-            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
-        }
-
-        private bool ProduitExists(int id)
-        {
-            return _context.Produits.Any(e => e.Id == id);
         }
     }
 }

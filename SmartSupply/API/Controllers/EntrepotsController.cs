@@ -1,44 +1,35 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿// SmartSupply1.Controllers.EntrepotsController.cs
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
+using MediatR;
 using SmartSupply.Domain.Models;
-using SmartSupply.Infrastructure;
+using SmartSupply.Application.Commands.Entrepots;
+using SmartSupply.Application.Queries.Entrepots;
 
-namespace SmartSupply.API.Controllers
+namespace SmartSupply1.Controllers
 {
     public class EntrepotsController : Controller
     {
-        private readonly SmartSupplyDbContext _context;
+        private readonly IMediator _mediator;
 
-        public EntrepotsController(SmartSupplyDbContext context)
+        public EntrepotsController(IMediator mediator)
         {
-            _context = context;
+            _mediator = mediator;
         }
 
         // GET: Entrepots
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Entrepots.ToListAsync());
+            var list = await _mediator.Send(new GetEntrepotsQuery());
+            return View(list);
         }
 
         // GET: Entrepots/Details/5
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
-            var entrepot = await _context.Entrepots
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (entrepot == null)
-            {
-                return NotFound();
-            }
+            var entrepot = await _mediator.Send(new GetEntrepotByIdQuery(id.Value));
+            if (entrepot == null) return NotFound();
 
             return View(entrepot);
         }
@@ -50,86 +41,61 @@ namespace SmartSupply.API.Controllers
         }
 
         // POST: Entrepots/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,Nom,Adresse,CapaciteMax,DateCreation")] Entrepot entrepot)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
+                return View(entrepot);
+
+            var created = await _mediator.Send(new CreateEntrepotCommand(entrepot.Nom, entrepot.Adresse, entrepot.CapaciteMax));
+            if (!created)
             {
-                _context.Add(entrepot);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                ModelState.AddModelError("", "Impossible de créer l'entrepôt (nom peut-être déjà utilisé ou données invalides).");
+                return View(entrepot);
             }
-            return View(entrepot);
+
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: Entrepots/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
-            var entrepot = await _context.Entrepots.FindAsync(id);
-            if (entrepot == null)
-            {
-                return NotFound();
-            }
+            var entrepot = await _mediator.Send(new GetEntrepotByIdQuery(id.Value));
+            if (entrepot == null) return NotFound();
+
             return View(entrepot);
         }
 
         // POST: Entrepots/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,Nom,Adresse,CapaciteMax,DateCreation")] Entrepot entrepot)
         {
-            if (id != entrepot.Id)
+            if (id != entrepot.Id) return NotFound();
+
+            if (!ModelState.IsValid)
+                return View(entrepot);
+
+            var updated = await _mediator.Send(new UpdateEntrepotCommand(entrepot.Id, entrepot.Nom, entrepot.Adresse, entrepot.CapaciteMax));
+            if (updated == null)
             {
-                return NotFound();
+                ModelState.AddModelError("", "Impossible de mettre à jour (entrepôt introuvable ou nom déjà utilisé).");
+                return View(entrepot);
             }
 
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(entrepot);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!EntrepotExists(entrepot.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            return View(entrepot);
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: Entrepots/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
-            var entrepot = await _context.Entrepots
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (entrepot == null)
-            {
-                return NotFound();
-            }
+            var entrepot = await _mediator.Send(new GetEntrepotByIdQuery(id.Value));
+            if (entrepot == null) return NotFound();
 
             return View(entrepot);
         }
@@ -139,19 +105,15 @@ namespace SmartSupply.API.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var entrepot = await _context.Entrepots.FindAsync(id);
-            if (entrepot != null)
+            var deleted = await _mediator.Send(new DeleteEntrepotCommand(id));
+            if (!deleted)
             {
-                _context.Entrepots.Remove(entrepot);
+                ModelState.AddModelError("", "Impossible de supprimer l'entrepôt (introuvable ou erreur).");
+                var ent = await _mediator.Send(new GetEntrepotByIdQuery(id));
+                return View(ent);
             }
 
-            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
-        }
-
-        private bool EntrepotExists(int id)
-        {
-            return _context.Entrepots.Any(e => e.Id == id);
         }
     }
 }

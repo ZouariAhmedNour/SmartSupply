@@ -3,5 +3,5 @@ using SmartSupply.Domain.Models;
 
 namespace SmartSupply.Application.Queries.Produits
 {
-    public record GetProduitsQuery() : IRequest<List<Produit>>;
+    public record GetProduitByIdQuery(int Id) : IRequest<Produit?>;
 }

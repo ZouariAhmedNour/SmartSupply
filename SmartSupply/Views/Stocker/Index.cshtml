@@ -2,19 +2,158 @@
     ViewData["Title"] = "Gestion du Stock";
 }
 
-<div class="container mt-4">
-    <h2 class="mb-3">Espace Stock</h2>
-    <p>Actions disponibles pour le Magasinier / Gestionnaire de Stock :</p>
+<div class="container py-5">
+    <!-- En-tête -->
+    <div class="mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none">Accueil</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Gestion du Stock</li>
+            </ol>
+        </nav>
+        <div class="text-center mb-5">
+            <i class="bi bi-boxes text-primary fs-1 mb-3"></i>
+            <h1 class="display-4 fw-bold text-primary">Espace Stock</h1>
+            <p class="lead text-muted">Gérez et contrôlez vos inventaires en temps réel</p>
+        </div>
+    </div>
 
-    <ul class="list-group mt-3">
-        <li class="list-group-item">
-            <a asp-controller="Stock" asp-action="Liste">Consulter le Stock</a>
-        </li>
-        <li class="list-group-item">
-            <a asp-controller="Stock" asp-action="Ajuster">Ajuster les Quantités</a>
-        </li>
-        <li class="list-group-item">
-            <a asp-controller="Stock" asp-action="Historique">Voir l’Historique des Mouvements</a>
-        </li>
-    </ul>
+    <!-- Section des actions rapides (Cards) -->
+    <div class="row g-4 justify-content-center">
+
+        <!-- Carte 1: Consulter le Stock -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-sm h-100 border-0 rounded-3 card-hover-scale">
+                <div class="card-body p-4 text-center">
+                    <div class="icon-circle bg-primary bg-opacity-10 mx-auto mb-3">
+                        <i class="bi bi-list-ul text-primary"></i>
+                    </div>
+                    <h5 class="card-title fw-bold mb-3">
+                        Consulter le Stock
+                    </h5>
+                    <p class="card-text text-muted mb-4">
+                        Visualisez l'état actuel de vos stocks dans tous les entrepôts
+                    </p>
+                    <a asp-controller="Stock" asp-action="Liste" class="btn btn-primary btn-lg w-100">
+                        <i class="bi bi-eye me-2"></i>Voir le Stock
+                    </a>
+                </div>
+                <div class="card-footer bg-primary bg-opacity-10 border-0 py-2 text-center">
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle me-1"></i>Vue d'ensemble complète
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Carte 2: Ajuster les Quantités -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-sm h-100 border-0 rounded-3 card-hover-scale">
+                <div class="card-body p-4 text-center">
+                    <div class="icon-circle bg-warning bg-opacity-10 mx-auto mb-3">
+                        <i class="bi bi-sliders text-warning"></i>
+                    </div>
+                    <h5 class="card-title fw-bold mb-3">
+                        Ajuster les Quantités
+                    </h5>
+                    <p class="card-text text-muted mb-4">
+                        Modifiez les niveaux de stock et enregistrez les mouvements
+                    </p>
+                    <a asp-controller="Stock" asp-action="Ajuster" class="btn btn-warning btn-lg w-100">
+                        <i class="bi bi-pencil-square me-2"></i>Ajuster
+                    </a>
+                </div>
+                <div class="card-footer bg-warning bg-opacity-10 border-0 py-2 text-center">
+                    <small class="text-muted">
+                        <i class="bi bi-gear me-1"></i>Entrées / Sorties
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Carte 3: Historique des Mouvements -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-sm h-100 border-0 rounded-3 card-hover-scale">
+                <div class="card-body p-4 text-center">
+                    <div class="icon-circle bg-info bg-opacity-10 mx-auto mb-3">
+                        <i class="bi bi-clock-history text-info"></i>
+                    </div>
+                    <h5 class="card-title fw-bold mb-3">
+                        Historique des Mouvements
+                    </h5>
+                    <p class="card-text text-muted mb-4">
+                        Consultez l'historique complet de tous les mouvements de stock
+                    </p>
+                    <a asp-controller="Stock" asp-action="Historique" class="btn btn-info btn-lg w-100 text-white">
+                        <i class="bi bi-journal-text me-2"></i>Voir l'Historique
+                    </a>
+                </div>
+                <div class="card-footer bg-info bg-opacity-10 border-0 py-2 text-center">
+                    <small class="text-muted">
+                        <i class="bi bi-calendar-event me-1"></i>Traçabilité complète
+                    </small>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Section informations supplémentaires -->
+    <div class="row mt-5">
+        <div class="col-lg-8 mx-auto">
+            <div class="card border-0 shadow-sm bg-light">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-start">
+                        <i class="bi bi-info-circle-fill text-primary fs-3 me-3 mt-1"></i>
+                        <div>
+                            <h5 class="fw-bold mb-2">Guide du Magasinier</h5>
+                            <p class="mb-2">En tant que gestionnaire de stock, vous avez accès à :</p>
+                            <ul class="mb-0">
+                                <li>La visualisation en temps réel des niveaux de stock</li>
+                                <li>L'ajustement des quantités (entrées, sorties, transferts)</li>
+                                <li>L'historique détaillé de tous les mouvements</li>
+                                <li>Les alertes de stock bas et rupture</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<style>
+    .card {
+        transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+    }
+
+    .card-hover-scale:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 1rem 3rem rgba(0,0,0,.175) !important;
+    }
+
+    .icon-circle {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .icon-circle i {
+            font-size: 3rem;
+        }
+
+    .btn {
+        transition: all 0.3s ease;
+    }
+
+        .btn:hover {
+            transform: scale(1.05);
+        }
+
+    .card-footer {
+        font-size: 0.875rem;
+    }
+</style>

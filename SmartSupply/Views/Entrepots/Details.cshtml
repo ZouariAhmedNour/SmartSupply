@@ -1,42 +1,154 @@
 ﻿@model SmartSupply.Domain.Models.Entrepot
-
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = "Détails de l'Entrepôt";
 }
 
-<h1>Details</h1>
+<div class="container py-5">
+    <!-- En-tête -->
+    <div class="mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none">Accueil</a></li>
+                <li class="breadcrumb-item"><a asp-action="Index" class="text-decoration-none">Entrepôts</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Détails</li>
+            </ol>
+        </nav>
+        <div class="d-flex align-items-center mb-3">
+            <i class="bi bi-building text-info fs-1 me-3"></i>
+            <div>
+                <h1 class="h2 fw-bold mb-0">Détails de l'Entrepôt</h1>
+                <p class="text-muted mb-0">Informations complètes du site de stockage</p>
+            </div>
+        </div>
+    </div>
 
-<div>
-    <h4>Entrepot</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Nom)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Nom)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Adresse)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Adresse)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.CapaciteMax)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.CapaciteMax)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.DateCreation)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.DateCreation)
-        </dd>
-    </dl>
+    <div class="row">
+        <!-- Carte principale des informations -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0 rounded-3 mb-4">
+                <div class="card-header bg-info bg-opacity-10 border-0 py-3">
+                    <h5 class="mb-0 fw-bold text-info">
+                        <i class="bi bi-info-circle me-2"></i>Informations Générales
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4 text-muted fw-semibold py-3 border-bottom">
+                            <i class="bi bi-building me-2"></i>Nom
+                        </dt>
+                        <dd class="col-sm-8 py-3 border-bottom">
+                            <span class="fs-5 fw-semibold">@Html.DisplayFor(model => model.Nom)</span>
+                        </dd>
+
+                        <dt class="col-sm-4 text-muted fw-semibold py-3 border-bottom">
+                            <i class="bi bi-geo-alt me-2"></i>Adresse
+                        </dt>
+                        <dd class="col-sm-8 py-3 border-bottom">
+                            <span class="fs-5">@Html.DisplayFor(model => model.Adresse)</span>
+                        </dd>
+
+                        <dt class="col-sm-4 text-muted fw-semibold py-3 border-bottom">
+                            <i class="bi bi-boxes me-2"></i>Capacité Maximale
+                        </dt>
+                        <dd class="col-sm-8 py-3 border-bottom">
+                            <span class="badge bg-success-subtle text-success px-3 py-2 fs-6">
+                                <i class="bi bi-box-seam me-1"></i>@Html.DisplayFor(model => model.CapaciteMax) unités
+                            </span>
+                        </dd>
+
+                        <dt class="col-sm-4 text-muted fw-semibold py-3">
+                            <i class="bi bi-calendar-event me-2"></i>Date de Création
+                        </dt>
+                        <dd class="col-sm-8 py-3">
+                            <span class="fs-5">@Html.DisplayFor(model => model.DateCreation)</span>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <!-- Carte latérale avec les actions -->
+        <div class="col-lg-4">
+            <!-- Icône de l'entrepôt -->
+            <div class="card shadow-sm border-0 rounded-3 mb-4">
+                <div class="card-body text-center p-4">
+                    <div class="avatar-circle bg-info bg-opacity-25 mx-auto mb-3">
+                        <i class="bi bi-warehouse text-info"></i>
+                    </div>
+                    <h4 class="fw-bold mb-1">@Model.Nom</h4>
+                    <p class="text-muted mb-0">Site de Stockage</p>
+                </div>
+            </div>
+
+            <!-- Actions rapides -->
+            <div class="card shadow-sm border-0 rounded-3 mb-4">
+                <div class="card-header bg-light border-0 py-3">
+                    <h6 class="mb-0 fw-bold">
+                        <i class="bi bi-lightning me-2"></i>Actions Rapides
+                    </h6>
+                </div>
+                <div class="card-body p-3">
+                    <div class="d-grid gap-2">
+                        <a asp-action="Edit" asp-route-id="@Model?.Id" class="btn btn-info text-white">
+                            <i class="bi bi-pencil me-2"></i>Modifier l'Entrepôt
+                        </a>
+                        <a asp-action="Index" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>Retour à la Liste
+                        </a>
+                        <a asp-action="Delete" asp-route-id="@Model?.Id" class="btn btn-outline-danger">
+                            <i class="bi bi-trash me-2"></i>Supprimer l'Entrepôt
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Informations système -->
+            <div class="card shadow-sm border-0 rounded-3">
+                <div class="card-header bg-light border-0 py-3">
+                    <h6 class="mb-0 fw-bold">
+                        <i class="bi bi-info-square me-2"></i>Informations Système
+                    </h6>
+                </div>
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <small class="text-muted">ID Entrepôt</small>
+                        <span class="badge bg-secondary">@Model.Id</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">Statut</small>
+                        <span class="badge bg-success">Actif</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
-    <a asp-action="Index">Back to List</a>
-</div>
+
+<style>
+    .avatar-circle {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 4rem;
+    }
+
+    dl.row dt {
+        display: flex;
+        align-items: center;
+    }
+
+    .card {
+        transition: transform 0.2s ease;
+    }
+
+    .btn {
+        transition: all 0.2s ease;
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+    }
+</style>

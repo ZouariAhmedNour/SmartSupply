@@ -37,27 +37,18 @@ namespace SmartSupply.API.Controllers
         // POST: Commandes/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(string ClientNom, string ClientEmail, int ProduitId, int Quantite, decimal PrixUnitaire)
+        public async Task<IActionResult> Create(Commande commande)
         {
-            if (string.IsNullOrWhiteSpace(ClientNom) || string.IsNullOrWhiteSpace(ClientEmail))
-            {
-                ModelState.AddModelError("", "Le nom et l'email sont requis.");
-                return View();
-            }
+            if (!ModelState.IsValid)
+                return View(commande);
 
-            var lignes = new List<LigneCommande>();
+            await _mediator.Send(new CreateCommandeCommand(
+                commande.ClientNom,
+                commande.ClientEmail,
+                commande.MontantTotal,
+                new List<LigneCommande>()
+            ));
 
-            if (ProduitId > 0 && Quantite > 0)
-            {
-                lignes.Add(new LigneCommande
-                {
-                    ProduitId = ProduitId,
-                    Quantite = Quantite,
-                    PrixUnitaire = PrixUnitaire
-                });
-            }
-
-            await _mediator.Send(new CreateCommandeCommand(ClientNom, ClientEmail, lignes));
             return RedirectToAction(nameof(Index));
         }
 

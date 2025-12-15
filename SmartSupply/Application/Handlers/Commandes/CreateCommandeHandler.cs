@@ -26,8 +26,8 @@ namespace SmartSupply.Application.Handlers.Commandes
                 ClientNom = request.ClientNom,
                 ClientEmail = request.ClientEmail,
                 DateCreation = DateTime.UtcNow,
-                Statut = "EnAttente",
-                MontantTotal = 0m,
+                Statut = "En attente",
+                MontantTotal = request.MontantTotal,
                 Lignes = new List<LigneCommande>()
             };
 

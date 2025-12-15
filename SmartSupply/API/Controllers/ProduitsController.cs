@@ -22,7 +22,8 @@ namespace SmartSupply1.Controllers
             var list = await _mediator.Send(new GetProduitsQuery());
             return View(list);
         }
-
+        #region Details
+         
         // GET: Produits/Details/5
         public async Task<IActionResult> Details(int? id)
         {
@@ -33,13 +34,16 @@ namespace SmartSupply1.Controllers
 
             return View(produit);
         }
+        #endregion
 
+        #region Create
         // GET: Produits/Create
         public IActionResult Create()
         {
             return View();
         }
-
+        #endregion
+        
         // POST: Produits/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -68,7 +72,7 @@ namespace SmartSupply1.Controllers
 
             return View(produit);
         }
-
+        #region edit
         // POST: Produits/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -88,7 +92,7 @@ namespace SmartSupply1.Controllers
 
             return RedirectToAction(nameof(Index));
         }
-
+        #endregion
         // GET: Produits/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
@@ -99,7 +103,7 @@ namespace SmartSupply1.Controllers
 
             return View(produit);
         }
-
+        #region delete
         // POST: Produits/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
@@ -115,5 +119,6 @@ namespace SmartSupply1.Controllers
 
             return RedirectToAction(nameof(Index));
         }
+        #endregion
     }
 }

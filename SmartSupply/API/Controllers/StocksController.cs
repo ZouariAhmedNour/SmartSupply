@@ -84,7 +84,9 @@ namespace SmartSupply1.Controllers
             await FillSelectLists();
             return View(stock);
         }
+        #endregion
 
+        #region editStock
         // POST: Stocks/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]

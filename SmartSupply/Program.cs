@@ -14,8 +14,9 @@ builder.Services.AddControllersWithViews()
 
 // DB context
 builder.Services.AddDbContext<SmartSupplyDbContext>(opt =>
-    opt.UseSqlServer(builder.Configuration.GetConnectionString("smartSupply")
-                     ?? builder.Configuration.GetConnectionString("DefaultConnection")));
+    opt.UseSqlServer(
+        builder.Configuration.GetConnectionString("AzureConnection")));
+        
 
 // ----------------------------------------------
 // 1️⃣ Charger l'assembly SmartSupply.Application

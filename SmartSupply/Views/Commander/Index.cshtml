@@ -2,101 +2,275 @@
     ViewData["Title"] = "Espace Commandes";
     Layout = "_Layout";
 }
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="mb-0">Tableau de bord — Commandes</h2>
-            <p class="text-muted mb-0">Espace Responsable Logistique / Responsable Commandes</p>
-        </div>
-        <div>
-            <a asp-controller="Commander" asp-action="Index" class="btn btn-outline-primary me-2">
-                <i class="bi bi-house-door"></i> Accueil
-            </a>
-            <a asp-controller="Commandes" asp-action="Index" class="btn btn-primary">
-                Voir toutes les commandes
-            </a>
-        </div>
-    </div>
-    <div class="row g-3 mb-4">
-        <div class="col-md-3">
-            <div class="card shadow-sm h-100">
-                <div class="card-body">
-                    <h6 class="card-subtitle mb-2 text-muted">Total</h6>
-                    <h3 class="card-title">@ViewBag.TotalCommandes</h3>
-                    <p class="card-text text-muted">Commandes créées</p>
+
+<div class="container py-5">
+    <!-- En-tête -->
+    <div class="mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none">Accueil</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Commandes</li>
+            </ol>
+        </nav>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-cart-check-fill text-primary fs-1 me-3"></i>
+                <div>
+                    <h1 class="h2 fw-bold mb-0">Tableau de Bord — Commandes</h1>
+                    <p class="text-muted mb-0">Espace Responsable Logistique / Gestion des Commandes</p>
                 </div>
             </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card shadow-sm h-100 border-success">
-                <div class="card-body">
-                    <h6 class="card-subtitle mb-2 text-muted">Livrées</h6>
-                    <h3 class="card-title">@ViewBag.Livrees</h3>
-                    <p class="card-text text-success">Commandes livrées</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card shadow-sm h-100 border-warning">
-                <div class="card-body">
-                    <h6 class="card-subtitle mb-2 text-muted">En attente</h6>
-                    <h3 class="card-title">@ViewBag.EnAttente</h3>
-                    <p class="card-text text-warning">En attente de traitement</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card shadow-sm h-100 border-danger">
-                <div class="card-body">
-                    <h6 class="card-subtitle mb-2 text-muted">Annulées</h6>
-                    <h3 class="card-title">@ViewBag.Annulees</h3>
-                    <p class="card-text text-danger">Commandes annulées</p>
-                </div>
+            <div class="d-flex gap-2">
+                <a asp-controller="Commander" asp-action="Index" class="btn btn-outline-secondary">
+                    <i class="bi bi-house-door me-1"></i> Accueil
+                </a>
+                <a asp-controller="Commandes" asp-action="Index" class="btn btn-primary btn-lg shadow-sm">
+                    <i class="bi bi-list-ul me-2"></i>Toutes les Commandes
+                </a>
             </div>
         </div>
     </div>
-    <h5 class="mb-3">Dernières commandes</h5>
-    <div class="table-responsive">
-        <table class="table table-striped table-hover">
-            <thead class="table-light">
-                <tr>
-                    <th>ID</th>
-                    <th>Client</th>
-                    <th>Montant</th>
-                    <th>Statut</th>
-                    <th>Date</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @if (ViewBag.DernieresCommandes != null && ((System.Collections.IEnumerable)ViewBag.DernieresCommandes).Cast<object>().Any())
-                {
-                    @foreach (dynamic c in ViewBag.DernieresCommandes)
-                    {
+
+    <!-- Statistiques KPI -->
+    <div class="row g-4 mb-4">
+        <!-- Total Commandes -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card shadow-sm h-100 border-0 rounded-3 card-hover">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h6 class="text-muted mb-2 fw-semibold">Total Commandes</h6>
+                            <h2 class="fw-bold text-primary mb-0">@ViewBag.TotalCommandes</h2>
+                        </div>
+                        <div class="icon-box bg-primary bg-opacity-10">
+                            <i class="bi bi-cart4 text-primary"></i>
+                        </div>
+                    </div>
+                    <p class="card-text text-muted small mb-0">
+                        <i class="bi bi-graph-up me-1"></i>Commandes créées
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Commandes Livrées -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card shadow-sm h-100 border-0 rounded-3 card-hover">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h6 class="text-muted mb-2 fw-semibold">Livrées</h6>
+                            <h2 class="fw-bold text-success mb-0">@ViewBag.Livrees</h2>
+                        </div>
+                        <div class="icon-box bg-success bg-opacity-10">
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                        </div>
+                    </div>
+                    <p class="card-text text-success small mb-0">
+                        <i class="bi bi-truck me-1"></i>Commandes livrées
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Commandes En Attente -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card shadow-sm h-100 border-0 rounded-3 card-hover">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h6 class="text-muted mb-2 fw-semibold">En Attente</h6>
+                            <h2 class="fw-bold text-warning mb-0">@ViewBag.EnAttente</h2>
+                        </div>
+                        <div class="icon-box bg-warning bg-opacity-10">
+                            <i class="bi bi-clock-fill text-warning"></i>
+                        </div>
+                    </div>
+                    <p class="card-text text-warning small mb-0">
+                        <i class="bi bi-hourglass-split me-1"></i>En traitement
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Commandes Annulées -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card shadow-sm h-100 border-0 rounded-3 card-hover">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h6 class="text-muted mb-2 fw-semibold">Annulées</h6>
+                            <h2 class="fw-bold text-danger mb-0">@ViewBag.Annulees</h2>
+                        </div>
+                        <div class="icon-box bg-danger bg-opacity-10">
+                            <i class="bi bi-x-circle-fill text-danger"></i>
+                        </div>
+                    </div>
+                    <p class="card-text text-danger small mb-0">
+                        <i class="bi bi-slash-circle me-1"></i>Commandes annulées
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tableau des dernières commandes -->
+    <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-header bg-primary bg-opacity-10 border-0 py-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold text-primary">
+                    <i class="bi bi-clock-history me-2"></i>Dernières Commandes
+                </h5>
+                <span class="badge bg-primary">Récentes</span>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="commandesTable">
+                    <thead class="table-light">
                         <tr>
-                            <td>@c.Id</td>
-                            <td>@c.ClientNom</td>
-                            <td>@c.MontantTotal.ToString("C")</td>
-                            <td>@c.Statut</td>
-                            <td>@c.DateCreation.ToString("yyyy-MM-dd HH:mm")</td>
-                            <td>
-                                <a asp-controller="Commandes" asp-action="Details" asp-route-id="@c.Id" class="btn btn-sm btn-outline-primary">Voir</a>
-                            </td>
+                            <th class="px-4 py-3 fw-semibold">
+                                <i class="bi bi-hash me-1"></i>ID
+                            </th>
+                            <th class="py-3 fw-semibold">
+                                <i class="bi bi-person me-1"></i>Client
+                            </th>
+                            <th class="py-3 fw-semibold text-end">
+                                <i class="bi bi-currency-euro me-1"></i>Montant
+                            </th>
+                            <th class="py-3 fw-semibold">
+                                <i class="bi bi-flag me-1"></i>Statut
+                            </th>
+                            <th class="py-3 fw-semibold">
+                                <i class="bi bi-calendar-event me-1"></i>Date
+                            </th>
+                            <th class="py-3 text-center fw-semibold">
+                                <i class="bi bi-gear me-1"></i>Actions
+                            </th>
                         </tr>
-                    }
-                }
-                else
-                {
-                    <tr>
-                        <td colspan="6" class="text-center text-muted">Aucune commande récente.</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+                    </thead>
+                    <tbody>
+                        @if (ViewBag.DernieresCommandes != null && ((System.Collections.IEnumerable)ViewBag.DernieresCommandes).Cast<object>().Any())
+                        {
+                            @foreach (dynamic c in ViewBag.DernieresCommandes)
+                            {
+                                <tr>
+                                    <td class="px-4">
+                                        <span class="badge bg-secondary-subtle text-secondary font-monospace">
+                                            #@c.Id
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-2">
+                                                <i class="bi bi-person-fill text-primary"></i>
+                                            </div>
+                                            <span class="fw-semibold">@c.ClientNom</span>
+                                        </div>
+                                    </td>
+                                    <td class="text-end">
+                                        <span class="fw-bold text-success">@c.MontantTotal.ToString("C")</span>
+                                    </td>
+                                    <td>
+                                        @if (c.Statut == "Livrée")
+                                        {
+                                            <span class="badge bg-success-subtle text-success px-3 py-2">
+                                                <i class="bi bi-check-circle-fill me-1"></i>@c.Statut
+                                            </span>
+                                        }
+                                        else if (c.Statut == "En attente")
+                                        {
+                                            <span class="badge bg-warning-subtle text-warning px-3 py-2">
+                                                <i class="bi bi-clock-fill me-1"></i>@c.Statut
+                                            </span>
+                                        }
+                                        else if (c.Statut == "Annulée")
+                                        {
+                                            <span class="badge bg-danger-subtle text-danger px-3 py-2">
+                                                <i class="bi bi-x-circle-fill me-1"></i>@c.Statut
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary-subtle text-secondary px-3 py-2">
+                                                @c.Statut
+                                            </span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            <i class="bi bi-calendar3 me-1"></i>@c.DateCreation.ToString("dd/MM/yyyy HH:mm")
+                                        </small>
+                                    </td>
+                                    <td class="text-center">
+                                        <a asp-controller="Commandes" asp-action="Details" asp-route-id="@c.Id"
+                                           class="btn btn-sm btn-outline-primary"
+                                           title="Voir les détails">
+                                            <i class="bi bi-eye me-1"></i>Détails
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center py-5">
+                                    <div class="text-muted">
+                                        <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                        <p class="mb-0">Aucune commande récente.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>
+
 <style>
-    .card-title {
-        font-weight: 700;
+    .card-hover {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
+
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 1rem 3rem rgba(0,0,0,.175) !important;
+        }
+
+    .icon-box {
+        width: 50px;
+        height: 50px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .icon-box i {
+            font-size: 1.5rem;
+        }
+
+    .table > tbody > tr:hover {
+        background-color: rgba(13, 110, 253, 0.05);
+    }
+
+    .badge {
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+
+    .font-monospace {
+        font-family: 'Courier New', monospace;
+    }
+
+    .btn-sm {
+        transition: all 0.2s ease;
+    }
+
+        .btn-sm:hover {
+            transform: translateY(-2px);
+        }
 </style>
